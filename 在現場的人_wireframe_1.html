@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>《在現場的人》互動專題｜線框稿 + 拍攝清單 v0.2</title>
+<style>
+  :root{
+    --canvas:#E5E5E8;
+    --frame-bg:#FFFFFF;
+    --line:#C7C7CC;
+    --line-dark:#9A9AA1;
+    --ink:#1C1C1F;
+    --sub:#6B6B72;
+    --pin:#FF5C5C;
+    --cam:#0E9C8A;
+    --cam-bg:#DFF6F1;
+    --accent:#2E5CFF;
+    --accent-bg:#E7ECFF;
+    --mono: "SFMono-Regular", Menlo, Consolas, monospace;
+    --sans: -apple-system, "PingFang TC", "Noto Sans TC", "Helvetica Neue", Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--canvas); font-family:var(--sans); color:var(--ink);
+    background-image:radial-gradient(circle, #d3d3d8 1px, transparent 1px);
+    background-size:22px 22px;
+  }
+  .topbar{
+    position:sticky; top:0; z-index:50; background:rgba(255,255,255,.94); backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--line); padding:12px 24px;
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  }
+  .topbar h1{font-size:15px; margin:0; letter-spacing:.02em;}
+  .topbar .tag{font-family:var(--mono); font-size:10px; color:var(--sub); background:#F0F0F2; border:1px solid var(--line); border-radius:4px; padding:2px 8px;}
+  .legend{display:flex; gap:14px; align-items:center; font-family:var(--mono); font-size:10px; color:var(--sub); margin-left:12px;}
+  .legend .item{display:flex; align-items:center; gap:5px;}
+  .legend .sw{width:14px; height:14px; border-radius:50% 50% 50% 4px; transform:rotate(45deg); display:inline-block;}
+  .legend .sw.i{background:var(--pin);}
+  .legend .sw.c{background:var(--cam);}
+  .topbar .nav{margin-left:auto; display:flex; gap:6px; flex-wrap:wrap;}
+  .topbar .nav a{font-family:var(--mono); font-size:10.5px; text-decoration:none; color:var(--sub); border:1px solid var(--line); border-radius:20px; padding:4px 10px; white-space:nowrap;}
+  .topbar .nav a:hover{color:var(--accent); border-color:var(--accent);}
+
+  .board{display:flex; align-items:flex-start; gap:64px; padding:70px 64px 160px; overflow-x:auto;}
+  .stage{display:flex; flex-direction:column; align-items:flex-start; scroll-margin-top:90px;}
+  .stage-label{font-family:var(--mono); font-size:11px; color:var(--sub); margin-bottom:8px; display:flex; align-items:center; gap:8px;}
+  .stage-label b{color:var(--ink); font-size:12.5px; font-weight:600;}
+  .stage-label .chip{background:var(--accent-bg); color:var(--accent); border-radius:3px; padding:1px 6px; font-size:10px;}
+
+  .frame{width:400px; background:var(--frame-bg); border-radius:2px; box-shadow:0 1px 3px rgba(0,0,0,.08), 0 18px 40px rgba(0,0,0,.10); position:relative; overflow:hidden;}
+  .fscreen{position:relative;}
+  .section{position:relative; border-bottom:1px dashed var(--line); padding:18px 16px;}
+  .section:last-child{border-bottom:none;}
+  .section.dark{background:#141416; color:#EDEDEF;}
+  .section.dark .wl{background:#3A3A40;}
+  .section.dark .wimg{background:repeating-linear-gradient(135deg,#232326,#232326 8px,#2c2c30 8px,#2c2c30 16px); border-color:#3A3A40;}
+
+  .wl{height:8px; background:#DEDEE2; border-radius:2px; margin:6px 0;}
+  .wl.h{height:14px; background:#B8B8BF;}
+  .wl.w20{width:20%;} .wl.w30{width:30%;} .wl.w40{width:40%;}
+  .wl.w50{width:50%;} .wl.w60{width:60%;} .wl.w70{width:70%;}
+  .wl.w80{width:80%;} .wl.w90{width:90%;} .wl.w100{width:100%;}
+
+  .wimg{width:100%; border:1px solid var(--line); border-radius:3px; background:repeating-linear-gradient(135deg,#F2F2F4,#F2F2F4 8px,#E7E7EA 8px,#E7E7EA 16px); display:flex; align-items:center; justify-content:center; color:var(--sub); font-family:var(--mono); font-size:10px; text-align:center; padding:6px;}
+  .eyebrow{font-family:var(--mono); font-size:9.5px; letter-spacing:.08em; color:var(--sub); text-transform:uppercase;}
+  .btn{display:inline-flex; align-items:center; gap:4px; border:1px dashed var(--line-dark); border-radius:20px; padding:5px 10px; font-size:10.5px; color:var(--sub); font-family:var(--mono);}
+  .glow{width:9px;height:9px;border-radius:50%; background:radial-gradient(circle,#fff2b0,#e0b23a 70%); box-shadow:0 0 8px 2px rgba(224,178,58,.7); position:absolute;}
+
+  .pin{position:absolute; width:18px; height:18px; border-radius:50% 50% 50% 4px; background:var(--pin); color:#fff; font-family:var(--mono); font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; transform:rotate(45deg); box-shadow:0 2px 4px rgba(0,0,0,.25); z-index:10;}
+  .pin span{transform:rotate(-45deg);}
+  .pin.cam{background:var(--cam);}
+
+  .notes{width:400px; margin-top:14px; background:#FFFDF2; border:1px solid #EDE6BE; border-radius:6px; padding:12px 14px;}
+  .notes .n{display:flex; gap:8px; font-size:11.5px; line-height:1.55; margin-bottom:7px; color:#3a3a1f;}
+  .notes .n:last-child{margin-bottom:0;}
+  .notes .n b{flex:0 0 auto; width:16px; height:16px; border-radius:50%; background:var(--pin); color:#fff; font-size:9.5px; font-family:var(--mono); display:flex; align-items:center; justify-content:center; margin-top:2px;}
+  .notes .n.cam b{background:var(--cam);}
+
+  .shotlist{width:400px; margin-top:10px; background:var(--cam-bg); border:1px solid #B7E4DB; border-radius:6px; padding:12px 14px;}
+  .shotlist .head{font-family:var(--mono); font-size:10px; color:var(--cam); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:6px;}
+  .shot{display:flex; gap:8px; font-size:11px; line-height:1.55; margin-bottom:8px; color:#0b3a34;}
+  .shot:last-child{margin-bottom:0;}
+  .shot b{flex:0 0 auto; width:16px; height:16px; border-radius:50%; background:var(--cam); color:#fff; font-size:9.5px; font-family:var(--mono); display:flex; align-items:center; justify-content:center; margin-top:2px;}
+  .tagset{display:flex; gap:4px; flex-wrap:wrap; margin-top:3px;}
+  .tagset span{font-family:var(--mono); font-size:8px; border-radius:3px; padding:1px 5px; border:1px solid #8fd0c4; color:#0e6b5e; background:#fff;}
+  .tagset span.warn{border-color:#e8b23a; color:#8a5a00; background:#fff8e8;}
+
+  .metric-row{display:flex; gap:5px; flex-wrap:wrap; margin-top:6px;}
+  .metric{font-family:var(--mono); font-size:8.5px; border:1px solid var(--line-dark); border-radius:3px; padding:2px 5px; color:var(--sub);}
+  .bar-track{height:5px; background:#E6E6EA; border-radius:3px; overflow:hidden; margin-top:2px;}
+  .bar-fill{height:100%; background:var(--line-dark); border-radius:3px;}
+
+  .chat-bub{background:#26262b; color:#e8e8ea; font-size:11px; border-radius:10px; padding:6px 10px; display:inline-block; margin:4px 0; max-width:80%;}
+  .chat-bub.right{margin-left:auto; display:block; width:fit-content; background:#3a3a42;}
+
+  .tl-track{position:relative; height:2px; background:var(--line-dark); margin:26px 6px 10px;}
+  .tl-dot{position:absolute; top:-4px; width:10px; height:10px; border-radius:50%; background:var(--frame-bg); border:2px solid var(--line-dark);}
+  .tl-dot.active{background:var(--pin); border-color:var(--pin);}
+  .tl-label{position:absolute; top:-22px; font-family:var(--mono); font-size:8px; color:var(--sub); white-space:nowrap;}
+
+  .tile{display:inline-block; font-family:var(--mono); font-size:9.5px; border:1px solid var(--line-dark); border-radius:4px; padding:5px 8px; margin:3px; background:#F7F7F9; color:var(--sub);}
+  .tile.ghost{border-style:dashed; color:var(--line-dark); background:transparent;}
+
+  .slider-wrap{position:relative; height:130px; border-radius:4px; overflow:hidden; border:1px solid var(--line);}
+  .slider-half{position:absolute; top:0; bottom:0; width:50%; background:repeating-linear-gradient(135deg,#EFEFF1,#EFEFF1 8px,#E2E2E6 8px,#E2E2E6 16px);}
+  .slider-half.b{left:50%; background:repeating-linear-gradient(135deg,#DADAE6,#DADAE6 8px,#CACAD8 8px,#CACAD8 16px);}
+  .slider-handle{position:absolute; left:50%; top:0; bottom:0; width:2px; background:#fff; box-shadow:0 0 0 1px var(--line-dark);}
+  .slider-knob{position:absolute; left:50%; top:50%; width:22px; height:22px; margin:-11px 0 0 -11px; border-radius:50%; background:#fff; border:1px solid var(--line-dark);}
+
+  .glitch{font-size:11px; line-height:1.6;}
+  .glitch .g1{color:#c4c4c4;}
+  .glitch .g2{color:#ff5c5c; text-decoration:line-through wavy;}
+
+  /* scroll-scrubbed video mock */
+  .video-mock{position:relative; height:220px; border-radius:5px; overflow:hidden; border:1px solid #2a2a2a; background:linear-gradient(180deg,#3d4a3f,#5c6b52 40%,#8a9678 70%,#c9c2a0);}
+  .video-mock .horizon{position:absolute; left:0; right:0; top:38%; height:1px; background:rgba(255,255,255,.25);}
+  .video-mock .coastline{position:absolute; left:-10%; right:-10%; bottom:20%; height:34%; background:radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.12), transparent 70%);}
+  .video-mock .caption{position:absolute; left:14px; right:14px; bottom:14px; color:#fff; font-size:12px; line-height:1.6; text-shadow:0 1px 4px rgba(0,0,0,.6); font-weight:600;}
+  .video-mock .rec{position:absolute; top:10px; left:12px; display:flex; align-items:center; gap:5px; font-family:var(--mono); font-size:9px; color:#fff;}
+  .video-mock .rec .dotred{width:6px; height:6px; border-radius:50%; background:#ff4d4d;}
+  .video-mock .frameno{position:absolute; top:10px; right:12px; font-family:var(--mono); font-size:9px; color:#fff; opacity:.8;}
+  .scrub-track{position:relative; height:6px; background:#E6E6EA; border-radius:3px; margin-top:10px;}
+  .scrub-fill{position:absolute; left:0; top:0; bottom:0; width:38%; background:var(--cam); border-radius:3px;}
+  .scrub-heads{position:relative; margin-top:4px; height:16px;}
+  .scrub-heads span{position:absolute; top:0; transform:translateX(-50%); font-family:var(--mono); font-size:7.5px; color:var(--sub); white-space:nowrap;}
+
+  .end-note{padding:70px 64px 40px; max-width:680px; font-size:13px; line-height:1.9; color:var(--sub);}
+  .end-note b{color:var(--ink);}
+  .end-note h3{color:var(--ink); font-size:13px; margin:20px 0 6px;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>《在現場的人》互動專題</h1>
+  <span class="tag">WIREFRAME + SHOTLIST · v0.2</span>
+  <div class="legend">
+    <div class="item"><span class="sw i"></span>互動設計節點</div>
+    <div class="item"><span class="sw c"></span>拍攝清單 / 素材需求</div>
+  </div>
+  <div class="nav">
+    <a href="#s0">開場</a><a href="#s1">01 現場</a><a href="#s2">02 兩難</a>
+    <a href="#s3">03 烙印</a><a href="#s4">04 飛安制度</a><a href="#s5">05 大園到基隆河</a><a href="#s6">結尾</a>
+  </div>
+</div>
+
+<div class="board">
+
+  <!-- ============ 開場 ============ -->
+  <div class="stage" id="s0">
+    <div class="stage-label"><span class="chip">OPENING</span><b>開場 · 事故之後,在現場留下的印記</b></div>
+    <div class="frame">
+      <div class="fscreen">
+        <div class="section dark" style="min-height:300px;">
+          <div class="eyebrow" style="color:#8f8f96;">01 · 靈異傳聞地圖</div>
+          <div class="wimg" style="height:220px; position:relative; margin-top:8px; background:linear-gradient(180deg,#0b0b0d,#1a1a1f);">
+            夜色機場周邊地圖線稿
+            <div class="glow" style="top:30%; left:25%;"></div>
+            <div class="glow" style="top:55%; left:60%;"></div>
+            <div class="glow" style="top:70%; left:35%;"></div>
+            <div class="glow" style="top:20%; left:75%;"></div>
+            <div class="pin" style="top:26%; left:25%;"><span>1</span></div>
+            <div class="pin cam" style="bottom:6px; right:6px;"><span>A</span></div>
+          </div>
+          <div class="wl" style="background:#3A3A40; width:60%; margin-top:10px;"></div>
+        </div>
+        <div class="section dark" style="min-height:170px;">
+          <div class="eyebrow" style="color:#8f8f96;">02 · 編輯台來電（向下滑動逐句浮現）</div>
+          <div class="pin" style="top:16px; right:14px;"><span>2</span></div>
+          <div style="margin-top:10px;">
+            <div class="chat-bub">你現在在哪裡？去大園。</div>
+            <div class="chat-bub right">大園？發生什麼事了？</div>
+            <div class="chat-bub" style="opacity:.45;">空難。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <div class="n"><b>1</b>地圖上散布微微閃爍光點，對應災後流傳的空難靈異故事／都市傳說；點擊光點展開完整敘述卡片，搭配新聞報導、地方說法與時代背景。從集體恐懼與社會記憶切入。</div>
+      <div class="n"><b>2</b>畫面轉全黑，文字逐句浮現模擬編輯台與記者對話；搭配低頻環境音、電話雜訊、逐漸加快的心跳聲，作為由「社會傳聞」轉入「記者第一線視角」的敘事轉場。無需照片，純文字＋音效。</div>
+    </div>
+    <div class="shotlist">
+      <div class="head">📷 拍攝清單 · 開場</div>
+      <div class="shot"><b>A</b>地圖底圖素材：可用<u>空拍機在夜間或黃昏時段拍攝大園沿海／機場周邊空景</u>，去色、降彩度、加深後作為地圖底圖質地（非寫實地圖，是氛圍化處理），與後製疊加的光點、路網線稿合成。
+        <div class="tagset"><span>🛸 空拍</span><span>黃昏／夜間</span><span>後製合成用</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 第一章 ============ -->
+  <div class="stage" id="s1">
+    <div class="stage-label"><span class="chip">CH.01</span><b>記者如何走進空難現場</b></div>
+    <div class="frame">
+      <div class="fscreen">
+        <div class="section">
+          <div class="eyebrow">敘事正文</div>
+          <div class="wl h w70" style="margin-top:8px;"></div>
+          <div class="wl w100"></div><div class="wl w90"></div><div class="wl w80"></div>
+          <div class="wimg" style="height:130px; margin-top:8px; position:relative;">
+            現場火光／殘骸／人群 資料照
+            <div class="pin cam" style="bottom:6px; right:6px;"><span>B</span></div>
+          </div>
+        </div>
+        <div class="section" style="background:#FAFAFB;">
+          <div class="eyebrow">03 · 記者採訪情境模擬遊戲</div>
+          <div class="pin" style="top:14px; right:14px;"><span>3</span></div>
+          <div class="wl h w90" style="margin-top:10px; background:#D8D8DE; position:relative;"></div>
+          <div class="wl w100"></div><div class="wl w70"></div>
+          <div style="display:flex; gap:6px; margin-top:10px;">
+            <span class="btn">選項 A</span><span class="btn">選項 B</span>
+          </div>
+          <div class="metric-row">
+            <div class="metric">查證力<div class="bar-track"><div class="bar-fill" style="width:70%;"></div></div></div>
+            <div class="metric">時效性<div class="bar-track"><div class="bar-fill" style="width:40%;"></div></div></div>
+            <div class="metric">倫理線<div class="bar-track"><div class="bar-fill" style="width:85%;"></div></div></div>
+          </div>
+          <div class="metric-row">
+            <div class="metric">現場掌握<div class="bar-track"><div class="bar-fill" style="width:55%;"></div></div></div>
+            <div class="metric">編輯台信任<div class="bar-track"><div class="bar-fill" style="width:30%;"></div></div></div>
+            <div class="metric">心理承受<div class="bar-track"><div class="bar-fill" style="width:60%;"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <div class="n"><b>3</b>讀者代入第一線記者，面對編輯台催稿、傷亡查證、現場封鎖、家屬訪問等連續情境。六項指標隨選擇即時變動，任一歸零判定失敗；呈現災難報導「沒有標準答案」的專業拉扯。</div>
+    </div>
+    <div class="shotlist">
+      <div class="head">📷 拍攝清單 · 第一章</div>
+      <div class="shot"><b>B</b>1998年現場火光、殘骸、人群資料照：<u>非自行拍攝</u>，需向新聞資料室／中央社影像庫／當年採訪記者本人取得授權使用。若授權困難，可改以<u>當年地面新聞畫面截圖 + 局部模糊處理</u>，或以插畫／剪影方式重製替代。
+        <div class="tagset warn"><span>🗄 資料照片</span><span>需授權</span><span>優先確認來源</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 第二章 ============ -->
+  <div class="stage" id="s2">
+    <div class="stage-label"><span class="chip">CH.02</span><b>報導兩難：災難新聞的倫理邊界</b></div>
+    <div class="frame">
+      <div class="fscreen">
+        <div class="section">
+          <div class="wl h w60"></div><div class="wl w100"></div><div class="wl w90"></div>
+        </div>
+        <div class="section" style="background:#FAFAFB;">
+          <div class="eyebrow">04 · 倫理界線情境選擇（第一人稱）</div>
+          <div class="pin" style="top:14px; right:14px;"><span>4</span></div>
+          <div class="wimg" style="height:110px; margin-top:8px; position:relative;">
+            現場影像 / 家屬訪問畫面
+            <div class="pin cam" style="bottom:6px; right:6px;"><span>C</span></div>
+          </div>
+          <div style="display:flex; gap:6px; margin-top:10px;">
+            <span class="btn">靠近拍攝</span>
+            <span class="btn" style="opacity:.35; text-decoration:line-through;">拒絕</span>
+          </div>
+          <div style="display:flex; gap:6px; margin-top:6px;">
+            <span class="btn">追問家屬</span>
+            <span class="btn" style="opacity:.2; text-decoration:line-through;">暫停確認</span>
+          </div>
+          <div class="wl w40" style="margin-top:10px; background:#f0c4c4;"></div>
+          <div class="eyebrow" style="margin-top:2px;">畫面殘留 / 訊息催促動效</div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <div class="n"><b>4</b>每個節點需選擇：是否拍攝、是否追問、是否使用未查證資訊。不直接判定對錯——當讀者多次配合編輯台，「拒絕」「暫停確認」選項會逐漸淡出，象徵倫理判斷在壓力中被推移；搭配停頓延長、影像殘留、音效壓迫。</div>
+    </div>
+    <div class="shotlist">
+      <div class="head">📷 拍攝清單 · 第二章</div>
+      <div class="shot"><b>C</b>此處的「現場影像／家屬訪問畫面」涉及罹難者家屬與遺體，<u>不建議使用真實可辨識的歷史照片</u>，避免二次傷害。建議以<u>抽象化處理</u>呈現：剪影、背影、失焦特寫（手、隨身物、招魂幡一角），或重新棚拍手部/物件的空鏡示意。
+        <div class="tagset warn"><span>倫理敏感</span><span>建議重製而非資料照</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 第三章 ============ -->
+  <div class="stage" id="s3">
+    <div class="stage-label"><span class="chip">CH.03</span><b>災難如何在記者身上烙印</b></div>
+    <div class="frame">
+      <div class="fscreen">
+        <div class="section" style="background:#0d0d0f; color:#eee;">
+          <div class="eyebrow" style="color:#8f8f96;">05 · 創傷記憶干擾頁面</div>
+          <div class="pin" style="top:14px; right:14px;"><span>5</span></div>
+          <div class="glitch" style="margin-top:10px;">
+            <div class="wl" style="background:#3a3a40; width:80%;"></div>
+            <div class="wl" style="background:#3a3a40; width:60%;"></div>
+            <div class="g2" style="margin-top:6px;">畫│面◇突然△插入內心獨白</div>
+            <div class="wimg" style="height:100px; margin-top:8px; border-color:#3a3a40; opacity:.6; position:relative;">
+              照片閃爍 / 音訊延遲
+              <div class="pin cam" style="bottom:6px; right:6px;"><span>D</span></div>
+            </div>
+            <div class="g1" style="margin-top:6px;">〔關閉鍵〕再次彈出同一張照片</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <div class="n"><b>5</b>初始為普通報導頁面，滑動閱讀時逐漸出現異常：文字錯亂、照片閃爍、音訊延遲，甚至插入記者內心獨白。讀者關閉照片後可能被強制退回事故描述段落；插播重大快訊時畫面震動失真，象徵創傷記憶被再次喚起。</div>
+    </div>
+    <div class="shotlist">
+      <div class="head">📷 拍攝清單 · 第三章</div>
+      <div class="shot"><b>D</b>閃爍的照片建議<u>不是事故資料照</u>，而是象徵記憶侵擾的中性物件／場景空鏡：如深夜的新聞編輯室一角、無人的走道、窗外閃爍的燈、電視雜訊畫面。需另外安排<u>棚拍或現場空景跟拍</u>，營造壓抑、疏離的氛圍感，而非直接重現血腥畫面。
+        <div class="tagset"><span>📍 現場空景</span><span>氛圍照，非資料照</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 第四章 ============ -->
+  <div class="stage" id="s4">
+    <div class="stage-label"><span class="chip">CH.04</span><b>飛安制度的追索：空難新聞如何推進改革</b></div>
+    <div class="frame">
+      <div class="fscreen">
+
+        <div class="section">
+          <div class="eyebrow">06 · 臺灣飛安事故時間軸（可橫向滑動）</div>
+          <div class="pin" style="top:14px; right:14px;"><span>6</span></div>
+          <div class="tl-track" style="margin-top:34px;">
+            <div class="tl-dot" style="left:5%;"><span class="tl-label" style="left:-6px;">1969</span></div>
+            <div class="tl-dot active" style="left:38%;"><span class="tl-label" style="left:-16px;">1998 大園</span></div>
+            <div class="tl-dot" style="left:65%;"><span class="tl-label" style="left:-6px;">2002</span></div>
+            <div class="tl-dot" style="left:90%;"><span class="tl-label" style="left:-16px;">2015 復興</span></div>
+          </div>
+          <div class="pin cam" style="bottom:8px; right:14px;"><span>E</span></div>
+        </div>
+
+        <!-- NEW: 空拍 scroll-scrubbed video -->
+        <div class="section" style="background:#0d0f0e;">
+          <div class="eyebrow" style="color:#8fb; letter-spacing:.08em;">07 · 空拍視差滾動 — 大園現場長鏡頭（scroll-scrubbed 影片）</div>
+          <div class="pin cam" style="top:14px; right:14px;"><span>F</span></div>
+          <div class="video-mock" style="margin-top:10px;">
+            <div class="rec"><span class="dotred"></span>DRONE · 4K 24fps</div>
+            <div class="frameno">t = 00:38 / 02:10</div>
+            <div class="horizon"></div>
+            <div class="coastline"></div>
+            <div class="caption">27 年後，海堤還在原本的位置。</div>
+          </div>
+          <div class="scrub-track"><div class="scrub-fill"></div></div>
+          <div class="scrub-heads">
+            <span style="left:2%;">俯瞰全景</span>
+            <span style="left:38%;">下降接近</span>
+            <span style="left:68%;">貼地掠過</span>
+            <span style="left:92%;">聚落日常</span>
+          </div>
+          <div class="wl" style="background:#2a2f2c; width:75%; margin-top:12px;"></div>
+          <div class="wl" style="background:#2a2f2c; width:55%;"></div>
+        </div>
+
+        <div class="section">
+          <div class="eyebrow">08 · 歷史照片視差滾動（制度沿革）</div>
+          <div class="pin" style="top:14px; right:14px;"><span>7</span></div>
+          <div class="wimg" style="height:130px; margin-top:8px; position:relative;">
+            背景照片（視差） + 分層浮現文字
+            <div class="pin cam" style="bottom:6px; right:6px;"><span>G</span></div>
+          </div>
+          <div class="wl w60" style="margin-top:6px;"></div><div class="wl w40"></div>
+          <div class="eyebrow" style="margin-top:4px; color:var(--sub);">敘事節奏：事故現場 → 制度問題 → 改革進程</div>
+        </div>
+
+        <div class="section" style="background:#FAFAFB;">
+          <div class="eyebrow">09 · 飛安調查流程圖遊戲（拖曳排序 + 倒數計時）</div>
+          <div class="pin" style="top:14px; right:14px;"><span>8</span></div>
+          <div style="display:flex; gap:6px; align-items:center; margin-top:8px;">
+            <span class="btn" style="border-color:var(--pin); color:var(--pin);">⏱ 02:14</span>
+          </div>
+          <div style="border:1px dashed var(--line-dark); border-radius:6px; padding:8px; margin-top:8px;">
+            <span class="tile ghost">① 現場保存</span><span class="tile ghost">② ?</span><span class="tile ghost">③ ?</span>
+          </div>
+          <div style="margin-top:8px;">
+            <span class="tile">黑盒子解讀</span><span class="tile">證據蒐集</span><span class="tile">專家分析</span><span class="tile" style="border-color:var(--pin); color:var(--pin);">制度檢討（誤放：紅光提示）</span>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="eyebrow">10 · 大園空難現場今昔對照（滑桿）</div>
+          <div class="pin" style="top:14px; right:14px;"><span>9</span></div>
+          <div class="pin cam" style="top:14px; right:38px;"><span>H</span></div>
+          <div class="slider-wrap" style="margin-top:8px;">
+            <div class="slider-half a"></div>
+            <div class="slider-half b"></div>
+            <div class="slider-handle"></div>
+            <div class="slider-knob"></div>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-top:4px;">
+            <span class="eyebrow">1998 事故現場（資料照）</span><span class="eyebrow">今日空拍擷幀</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <div class="notes">
+      <div class="n"><b>6</b>橫向時間軸整理歷年重大飛安事故，標示年份、地點、航班、傷亡與後續調查，凸顯大園空難在歷史脈絡中的位置。</div>
+      <div class="n cam"><b>F</b>本互動為新增重點：以空拍長鏡頭作為「制度篇」開場的沉浸式主視覺。技術上是一鏡到底的空拍影片，播放進度與捲軸位置綁定（<i>不是自動播放，而是滑多少、影片走多少</i>），文字字幕依捲動位置分段淡入淡出，疊在畫面下方。</div>
+      <div class="n"><b>7</b>接續空拍段落，改用歷史資料照片做視差滾動，呈現飛安制度缺失與調查機制演變，把制度變遷與具體影像記憶連結。</div>
+      <div class="n"><b>8</b>上方虛線框不顯示正確流程，讀者需將文字圖塊拖曳至正確位置；倒數計時同步啟動模擬時間壓力，錯誤排序時圖塊散發紅光提示。</div>
+      <div class="n"><b>9</b>拖曳滑桿於同一畫面比對事故當時與今日景貌，「今日」畫面直接取自空拍長鏡頭中最能對應舊照片機位的一幀擷圖。</div>
+    </div>
+    <div class="shotlist">
+      <div class="head">📷 拍攝清單 · 第四章（本章為空拍重點章節）</div>
+      <div class="shot"><b>E</b>時間軸每個事故節點的小縮圖：<u>各起事故的資料照片</u>（新聞局／監察院／自由時代等歷史檔案或新聞資料庫），需逐一確認版權／來源標註。
+        <div class="tagset warn"><span>🗄 資料照片</span><span>多來源需個別授權</span></div>
+      </div>
+      <div class="shot"><b>F</b><u>核心空拍鏡頭（長鏡頭，建議 90–150 秒，4K／60fps 或至少 30fps 以利慢速捲動不卡頓）</u>：<br>
+        · 路線建議：從高空俯瞰整個大園沿海／機場周邊全景 → 緩慢下降、鏡頭前推朝向當年事故地點方向 → 貼近地面掠過海堤／堤防／田地 → 帶到附近聚落的日常畫面（居民、道路、農地）收尾。<br>
+        · 建議選在<u>無強風的清晨或傍晚</u>拍攝，光線平順、雲影少，利於後製切幀與文字疊加時畫面穩定。<br>
+        · 另需空拍<u>2–3個備用短鏡頭</u>（垂直俯視／低空掠過）供其他段落（如封面、社群預告）裁切使用。
+        <div class="tagset"><span>🛸 空拍</span><span>長鏡頭 90–150s</span><span>需飛航許可（機場周邊管制）</span></div>
+      </div>
+      <div class="shot"><b>G</b>制度沿革視差滾動用照片：<u>大園空難前後臺灣飛安事故相關資料照片</u>（現場、調查、記者會等），非自行拍攝，需向新聞資料室或相關機關申請使用授權。
+        <div class="tagset warn"><span>🗄 資料照片</span><span>需授權</span></div>
+      </div>
+      <div class="shot"><b>H</b>「今」的畫面優先直接<u>從核心空拍長鏡頭 F 中擷取靜幀</u>，選擇與 1998 年資料照片機位、角度最接近的一格；若空拍角度無法對應，需另外安排<u>地面實拍</u>同角度照片補足。務必事先比對舊照片的拍攝方向與地標，回到現場先勘景再飛。
+        <div class="tagset"><span>🛸 空拍擷幀</span><span>📍 地面補拍（備案）</span><span>需先比對舊照機位</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 第五章 ============ -->
+  <div class="stage" id="s5">
+    <div class="stage-label"><span class="chip">CH.05</span><b>從大園到基隆河：記者角色如何被重新定義</b></div>
+    <div class="frame">
+      <div class="fscreen">
+        <div class="section">
+          <div class="wl h w70"></div><div class="wl w100"></div><div class="wl w80"></div>
+          <div class="wimg" style="height:100px; margin-top:8px; position:relative;">
+            復興235 行車紀錄器畫面（資料照）
+            <div class="pin cam" style="bottom:6px; right:6px;"><span>I</span></div>
+          </div>
+        </div>
+        <div class="section" style="background:#FAFAFB;">
+          <div class="eyebrow">11 · 資訊碎片拼圖</div>
+          <div class="pin" style="top:14px; right:14px;"><span>10</span></div>
+          <div style="display:flex; gap:6px; margin-top:8px;">
+            <div style="flex:1; border:1px dashed var(--line-dark); border-radius:5px; padding:6px; font-family:var(--mono); font-size:8px; color:var(--sub); text-align:center;">資訊碎片區<br><span class="tile" style="margin:4px 0;">目擊者說法</span></div>
+            <div style="flex:1; border:1px dashed var(--line-dark); border-radius:5px; padding:6px; font-family:var(--mono); font-size:8px; color:var(--sub); text-align:center;">時間線區</div>
+            <div style="flex:1; border:1px dashed var(--line-dark); border-radius:5px; padding:6px; font-family:var(--mono); font-size:8px; color:var(--sub); text-align:center;">因果關係區</div>
+          </div>
+          <div class="wl w70" style="margin-top:10px;"></div>
+          <div style="text-align:center; font-family:var(--mono); font-size:10px; color:var(--sub); margin-top:8px; font-style:italic;">「當所有人都看見了，記者的工作，才正要開始。」</div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <div class="n"><b>10</b>讀者將行車紀錄器畫面、目擊者說法、官方聲明、社群貼文拖曳至三區塊，嘗試建立因果關係；部分錯誤／未查證資訊會混入其中。依讀者排列結果生成不同類型報導，呈現即時影像時代記者查證、排序、建構理解的工作。</div>
+    </div>
+    <div class="shotlist">
+      <div class="head">📷 拍攝清單 · 第五章</div>
+      <div class="shot"><b>I</b>復興航空235班機行車紀錄器畫面：<u>他人版權素材（原始拍攝者為路過駕駛）</u>，不可自行拍攝或重製，需向影像持有者／新聞台取得正式授權並標明來源；若無法取得授權，改以<u>示意重繪（icon／路線圖動畫）</u>方式呈現事件經過，避免使用他人原始影像。
+        <div class="tagset warn"><span>🗄 版權素材</span><span>需正式授權</span><span>備案：示意動畫</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 結尾 ============ -->
+  <div class="stage" id="s6">
+    <div class="stage-label"><span class="chip">CLOSING</span><b>結尾 · 回首與眺望：新聞工作的未竟之問</b></div>
+    <div class="frame">
+      <div class="fscreen">
+        <div class="section" style="background:#141416; color:#EDEDEF;">
+          <div class="eyebrow" style="color:#8f8f96;">受訪記者回望（多年後訪談）</div>
+          <div class="wl" style="background:#3A3A40; width:90%; margin-top:8px;"></div>
+          <div class="wl" style="background:#3A3A40; width:75%;"></div>
+          <div class="wimg" style="height:100px; margin-top:8px; background:repeating-linear-gradient(135deg,#232326,#232326 8px,#2c2c30 8px,#2c2c30 16px); border-color:#3A3A40; position:relative;">
+            記者肖像 / 訪談片段
+            <div class="pin cam" style="bottom:6px; right:6px;"><span>J</span></div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="wl h w60"></div><div class="wl w100"></div><div class="wl w90"></div><div class="wl w70"></div>
+          <div class="eyebrow" style="margin-top:8px;">回扣計畫精神：在混亂中查證，在悲傷中保持倫理，在事故後持續追問制度</div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <div class="n"><b>·</b>結尾不設互動裝置，回歸文字與訪談影像的靜態排版，讓節奏從前面高張力的互動段落沉澱下來；收束於記者角色不可取代性的核心命題。</div>
+    </div>
+    <div class="shotlist">
+      <div class="head">📷 拍攝清單 · 結尾</div>
+      <div class="shot"><b>J</b>受訪記者人物肖像／口述影像：需安排<u>正式人物採訪拍攝</u>，建議環境人像（記者辦公室、家中書房，或當年任職的媒體單位），搭配同步錄製口述訪談影片作為文字引言的視覺佐證；每位受訪者至少 1 張靜態肖像 + 1 段 30–60 秒口述片段。
+        <div class="tagset"><span>🎙 人物採訪</span><span>環境人像 + 口述影片</span><span>需提前約訪</span></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="end-note">
+  <b>版面邏輯備忘：</b>整體採「開場（情緒／氛圍）→ 五章（現場／倫理／創傷／制度／時代轉變）→ 結尾（沉澱）」的節奏設計。深色段落標記「記者主觀／心理」時刻，淺色段落對應「敘事正文／客觀資訊」。
+
+  <h3>拍攝清單總覽（依素材類型分類）</h3>
+  🛸 <b>空拍（本次新增重點）：</b>開場地圖底圖（A）、第四章核心長鏡頭（F，主素材）、今昔對照今日擷幀（H）。這三處共用同一批空拍素材，建議<u>安排同一次飛行任務</u>，先拍長鏡頭 F，再從中取靜幀給 A、H 使用，減少重複出勤。<br><br>
+  📍 <b>地面實拍／棚拍：</b>第三章氛圍空景（D）、今昔對照備案（H）、結尾人物採訪（J）。<br><br>
+  🗄 <b>資料照片／版權素材（需授權，非自行拍攝）：</b>第一章現場照（B）、第二章敏感畫面建議改重製（C）、第四章時間軸縮圖（E）與制度沿革照片（G）、第五章行車紀錄器畫面（I）。這批素材建議<u>最先啟動聯繫與授權流程</u>，因為等待回覆時間通常最長，容易卡住後續製作排程。
+
+  <h3>空拍任務規劃建議</h3>
+  1. 出發前先<u>比對 1998 年舊照片／舊聞畫面的拍攝機位</u>，標出對應的地面座標，才能讓「今昔對照」滑桿真正對得上。<br>
+  2. 大園鄰近機場管制空域，<u>飛航路線與時段需事先向民航局／機場申請許可</u>，建議及早排入時程。<br>
+  3. 長鏡頭建議選<u>無風的清晨或傍晚</u>拍攝以求畫面穩定；另備 2–3 段短鏡頭供封面／社群／備用剪輯使用。
+</div>
+
+</body>
+</html>
